@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Gift, Mountain, Smile, Waves, Stars } from 'lucide-react'
 import Hero from './components/Hero'
@@ -62,6 +62,12 @@ export default function App() {
   const [currentPath, setCurrentPath] = useState(null)
   const [screen, setScreen] = useState(0) // 0 choose, 1 intro, 2 game, 3 reward or ending, 4 orb hunt, 5 finale
   const [bgImage, setBgImage] = useState(null)
+
+  // Load persisted background image (for secret finale) and keep constant after first upload
+  useEffect(() => {
+    const stored = localStorage.getItem('nanna_bg_image')
+    if (stored) setBgImage(stored)
+  }, [])
 
   const path = currentPath ? PATHS[currentPath] : null
 
@@ -174,10 +180,14 @@ export default function App() {
           <Finale title="happy 51 nanna , i love you soo much, drink less  and lets stay happy - shiny" continuous hideExtras onReplay={() => { setCurrentPath(null); setScreen(0) }} />
         )
       }
-      // Secret: replace chapter 3 with ending screen, allow bg image upload
+      // Secret: replace chapter 3 with ending screen, allow bg image upload only if not already provided
       if (currentPath === 'secret') {
+        const handleUpload = (file, url) => {
+          setBgImage(url)
+          try { localStorage.setItem('nanna_bg_image', url) } catch {}
+        }
         return (
-          <Finale title="Happy Birthday Nanna!" continuous hideExtras allowUpload bgImage={bgImage} onUpload={(file, url) => setBgImage(url)} onReplay={() => { setCurrentPath(null); setScreen(0) }} />
+          <Finale title="Happy Birthday Nanna!" continuous hideExtras allowUpload={!bgImage} bgImage={bgImage} onUpload={handleUpload} onReplay={() => { setCurrentPath(null); setScreen(0) }} />
         )
       }
       // Laughter default reward
@@ -207,6 +217,11 @@ export default function App() {
 
     if (screen === 5) {
       // Final global ending used after orb hunt (e.g., from strength or laughter). Always-on confetti and simplified layout
+      if (currentPath === 'laughter') {
+        return (
+          <Finale title="Happy birthday nanna!!!" continuous hideExtras showBottleWall onReplay={() => { setCurrentPath(null); setScreen(0) }} />
+        )
+      }
       return (
         <Finale title="Happy birthday nanna!!!" continuous hideExtras onReplay={() => { setCurrentPath(null); setScreen(0) }} />
       )
@@ -227,10 +242,29 @@ export default function App() {
   )
 }
 
-function Finale({ title = 'Happy Birthday Nanna!', continuous = false, hideExtras = false, allowUpload = false, bgImage, onUpload, onReplay }) {
+function BottleWall() {
+  const items = Array.from({ length: 72 }, (_, i) => i)
+  const emojis = ['🍾','🍷','🥃','🍸','🍹','🍶']
+  return (
+    <div className="mt-6 grid grid-cols-8 gap-2 opacity-90">
+      {items.map(i => (
+        <div key={i} className="flex items-center justify-center text-2xl">
+          <span>{emojis[i % emojis.length]}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function Finale({ title = 'Happy Birthday Nanna!', continuous = false, hideExtras = false, allowUpload = false, bgImage, onUpload, onReplay, showBottleWall = false }) {
   return (
     <section className="relative min-h-[100dvh] w-full flex items-center justify-center p-4">
-      {bgImage && <div className="absolute inset-0"><img src={bgImage} alt="background" className="w-full h-full object-cover opacity-20"/></div>}
+      {bgImage && (
+        <div className="absolute inset-0">
+          <img src={bgImage} alt="background" className="w-full h-full object-cover" style={{ filter: 'brightness(1.22) contrast(1.05) saturate(1.05)' }} />
+          <div className="absolute inset-0 bg-black/50" />
+        </div>
+      )}
       <div className="absolute inset-0 bg-[radial-gradient(80%_120%_at_50%_0%,rgba(99,102,241,0.18),transparent_60%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(80%_120%_at_50%_100%,rgba(236,72,153,0.16),transparent_60%)]" />
       {continuous && <ConfettiBackground />}
@@ -238,7 +272,7 @@ function Finale({ title = 'Happy Birthday Nanna!', continuous = false, hideExtra
         <Gift className="w-14 h-14 mx-auto text-fuchsia-300 drop-shadow-[0_0_16px_rgba(236,72,153,0.6)]" />
         <h2 className="text-4xl font-black mt-3 drop-shadow-[0_0_28px_rgba(99,102,241,0.55)]">{title}</h2>
         {!hideExtras && <p className="mt-2 text-indigo-100/90">May your day be filled with joy, health, and endless love. We celebrate you today and always.</p>}
-        {allowUpload && (
+        {allowUpload && !bgImage && (
           <div className="mt-4 text-left">
             <UploadField label="Upload a photo for the background" onChange={onUpload} />
           </div>
@@ -246,6 +280,7 @@ function Finale({ title = 'Happy Birthday Nanna!', continuous = false, hideExtra
         <div className="mt-5 grid grid-cols-1 gap-3">
           <button onClick={onReplay} className="py-3 rounded-full bg-white/10 border border-white/20">Replay Adventure</button>
         </div>
+        {showBottleWall && <BottleWall />}
       </div>
     </section>
   )
