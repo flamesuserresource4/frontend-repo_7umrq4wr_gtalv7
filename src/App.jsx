@@ -63,10 +63,26 @@ export default function App() {
   const [screen, setScreen] = useState(0) // 0 choose, 1 intro, 2 game, 3 reward or ending, 4 orb hunt, 5 finale
   const [bgImage, setBgImage] = useState(null)
 
-  // Load persisted background image (for secret finale) and keep constant after first upload
+  // Load globally configured background image from backend (overrides localStorage behavior)
   useEffect(() => {
-    const stored = localStorage.getItem('nanna_bg_image')
-    if (stored) setBgImage(stored)
+    const loadGlobal = async () => {
+      try {
+        const base = import.meta.env.VITE_BACKEND_URL || ''
+        const res = await fetch(`${base}/config/finale-bg`)
+        const data = await res.json()
+        if (data?.url) {
+          setBgImage(`${base}${data.url}`)
+          return
+        }
+        // fallback to previous localStorage behavior if global not set
+        const stored = localStorage.getItem('nanna_bg_image')
+        if (stored) setBgImage(stored)
+      } catch (e) {
+        const stored = localStorage.getItem('nanna_bg_image')
+        if (stored) setBgImage(stored)
+      }
+    }
+    loadGlobal()
   }, [])
 
   const path = currentPath ? PATHS[currentPath] : null
@@ -180,14 +196,10 @@ export default function App() {
           <Finale title="happy 51 nanna , i love you soo much, drink less  and lets stay happy - shiny" continuous hideExtras onReplay={() => { setCurrentPath(null); setScreen(0) }} />
         )
       }
-      // Secret: replace chapter 3 with ending screen, allow bg image upload only if not already provided
+      // Secret: replace chapter 3 with ending screen; upload disabled because we use a global image now
       if (currentPath === 'secret') {
-        const handleUpload = (file, url) => {
-          setBgImage(url)
-          try { localStorage.setItem('nanna_bg_image', url) } catch {}
-        }
         return (
-          <Finale title="Happy Birthday Nanna!" continuous hideExtras allowUpload={!bgImage} bgImage={bgImage} onUpload={handleUpload} onReplay={() => { setCurrentPath(null); setScreen(0) }} />
+          <Finale title="Happy Birthday Nanna!" continuous hideExtras allowUpload={false} bgImage={bgImage} onReplay={() => { setCurrentPath(null); setScreen(0) }} />
         )
       }
       // Laughter default reward
