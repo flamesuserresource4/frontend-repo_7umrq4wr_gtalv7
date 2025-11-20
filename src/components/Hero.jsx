@@ -15,19 +15,18 @@ export default function Hero({ onStart }) {
 
       <Particles density={70} />
 
-      <div className="relative z-10 flex flex-col items-center justify-end h-full pb-24 px-6 text-center">
+      <div className="relative z-10 flex flex-col items-center justify-center h-full pb-16 px-6 text-center">
         <div className="max-w-sm mx-auto">
-          <p className="text-fuchsia-200/90 text-sm tracking-widest mb-3">A birthday micro-adventure</p>
           <h1 className="text-4xl sm:text-5xl font-black text-white drop-shadow-[0_0_24px_rgba(99,102,241,0.55)] leading-tight">
-            Kamui Wishes: For Nanna
+            its a special day
           </h1>
           <p className="mt-3 text-indigo-100/90 text-base">
-            Enter the neon gateway and follow the paths to unlock surprises, memories, and love.
+            enter into the world made by me and follow the paths to unlock surprises, memories , and love.
           </p>
         </div>
 
         <GlowButton onClick={onStart} className="mt-8">
-          Start the Journey
+          Start your journey
         </GlowButton>
       </div>
     </section>
